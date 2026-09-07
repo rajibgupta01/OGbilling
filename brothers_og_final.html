@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brothers OG — Inventory, POS & Billing</title>
+<style>
+:root{
+ --maroon:#650b12;--maroon2:#8b1620;--gold:#e7b96e;--cream:#fff7ea;
+ --bg:#f6f2ee;--ink:#251b1b;--muted:#756b68;--line:#e9ded4;
+ --green:#16764f;--red:#b62f36;--amber:#9a6511;--blue:#416bb0
+}
+*{box-sizing:border-box}
+body{
+ margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+ color:var(--ink);
+ background:
+ radial-gradient(circle at 0% 0%,rgba(231,185,110,.14),transparent 24%),
+ radial-gradient(circle at 100% 100%,rgba(101,11,18,.06),transparent 25%),
+ var(--bg)
+}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}
+.sidebar{
+ width:248px;position:fixed;inset:0 auto 0 0;background:linear-gradient(180deg,#650b12,#3e070b);
+ color:#fff;padding:18px;z-index:10;box-shadow:12px 0 32px rgba(52,8,10,.14)
+}
+.brand{display:flex;align-items:center;gap:12px;padding:6px 5px 20px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand img{width:60px;height:60px;object-fit:cover;border-radius:17px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.brand strong{display:block;font-size:18px;letter-spacing:.4px}.brand small{color:#e9cbc6}
+.nav{margin-top:18px}.nav button{
+ width:100%;border:0;border-radius:11px;background:transparent;color:#f8e9e7;
+ padding:12px;text-align:left;margin:4px 0;transition:.18s
+}
+.nav button:hover{background:rgba(255,255,255,.08);transform:translateX(3px)}
+.nav button.active{background:rgba(231,185,110,.16);box-shadow:inset 3px 0 0 var(--gold)}
+.nav span{display:inline-block;width:29px}
+.main{margin-left:248px;width:calc(100% - 248px);padding:24px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:20px}
+.topbar h1{margin:0;font-size:28px;letter-spacing:-.5px}.topbar p{margin:5px 0 0;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.card{
+ background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px;
+ box-shadow:0 7px 22px rgba(50,20,20,.05);animation:rise .4s ease both;transition:.2s
+}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(50,20,20,.09)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.stat{display:flex;justify-content:space-between;align-items:center}.stat .num{font-size:25px;font-weight:900}
+.stat small{display:block;color:var(--muted);margin-top:4px}
+.icon{width:44px;height:44px;border-radius:13px;background:var(--cream);display:grid;place-items:center;color:var(--maroon);font-size:20px}
+.hero{
+ position:relative;overflow:hidden;background:linear-gradient(135deg,var(--maroon),#7d111b 65%,#98463b);
+ color:#fff;border:0;min-height:168px;display:flex;align-items:center
+}
+.hero img{position:absolute;right:27px;top:22px;width:120px;height:120px;object-fit:cover;border-radius:28px;transform:rotate(2deg);box-shadow:0 12px 28px rgba(0,0,0,.22)}
+.hero:before,.hero:after{content:"";position:absolute;border:1px solid rgba(231,185,110,.15);border-radius:50%;right:-75px;top:-95px;width:270px;height:270px}
+.hero:after{right:-115px;top:-125px;width:350px;height:350px}
+.hero-copy{position:relative;z-index:1;max-width:760px;padding-right:165px}.kicker{font-size:11px;letter-spacing:1.6px;font-weight:900;color:#f1d4a4}
+.hero h2{margin:7px 0 5px;font-size:24px}.hero p{margin:0;color:#f8e7e1;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:16px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.section-title h2{margin:0;font-size:18px}
+.insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.insight{padding:13px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fff,#fffaf4)}
+.insight b{display:block;font-size:18px;margin-top:4px}.insight span{font-size:12px;color:var(--muted)}
+.progress{height:8px;border-radius:99px;background:#efe5dc;overflow:hidden;margin-top:9px}
+.progress span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--maroon),var(--gold));transition:width .5s}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.toolbar input{
+ flex:1;min-width:230px;padding:11px;border:1px solid #ddd0c7;border-radius:10px;background:#fff;outline:none
+}
+.toolbar input:focus,input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(231,185,110,.18)}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;transition:.15s}.btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(101,11,18,.12)}
+.primary{color:#fff;background:linear-gradient(135deg,var(--maroon),var(--maroon2))}
+.secondary{color:var(--maroon);background:#f2e8df}.danger{color:#a32929;background:#fde8e8}.success{color:#136d4a;background:#e5f5ed}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}
+th,td{padding:11px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}td{font-size:14px}tbody tr:hover td{background:#fffaf4}
+.badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900}
+.good{background:#e5f5ed;color:#146f4b}.low{background:#fff0d7;color:var(--amber)}.out{background:#fde7e7;color:var(--red)}.info{background:#e7effb;color:#315995}
+.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-size:12px;font-weight:800;color:#625957;margin-bottom:6px}
+.field input,.field select{width:100%;padding:10px;border:1px solid #ddd0c7;border-radius:9px;background:#fff;outline:none}
+.full{grid-column:1/-1}.muted,.mini-note{color:var(--muted);font-size:12px}.right{text-align:right}
+.modal{position:fixed;inset:0;background:rgba(25,7,9,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:30}
+.modal.show{display:flex}.modalbox{width:min(760px,100%);background:#fff;border-radius:18px;padding:20px;max-height:92vh;overflow:auto}
+.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modalhead h3{margin:0}.x{width:34px;height:34px;border:0;border-radius:50%;background:#f1e9e2}
+.billgrid{display:grid;grid-template-columns:1fr 390px;gap:16px}.billrow{
+ display:grid;grid-template-columns:1fr 70px 95px 32px;gap:7px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)
+}
+.billrow small{display:block;color:var(--muted)}.billrow input{padding:7px;width:100%;border:1px solid #ddd0c7;border-radius:7px}
+.totals{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.totrow{display:flex;justify-content:space-between;padding:5px 0}
+.grand{font-size:21px;font-weight:900;color:var(--maroon)}
+.invoice-preview{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px}
+.invoice-head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--maroon);padding-bottom:14px}
+.invoice-brand{display:flex;gap:12px;align-items:center}.invoice-brand img{width:58px;height:58px;object-fit:cover;border-radius:14px}
+.invtable{width:100%;border-collapse:collapse;margin-top:18px}.invtable th,.invtable td{border-bottom:1px solid #ddd;padding:9px;text-align:left}.invtable th{background:#faf4ec}
+.empty{padding:28px;text-align:center;color:var(--muted)}.toast{position:fixed;right:18px;bottom:18px;background:#241b1b;color:#fff;padding:12px 15px;border-radius:10px;display:none;z-index:50}.toast.show{display:block}
+@media(max-width:1050px){.sidebar{width:72px}.brand .txt,.nav .txt{display:none}.main{margin-left:72px;width:calc(100% - 72px)}.cards{grid-template-columns:repeat(2,1fr)}.grid2,.billgrid{grid-template-columns:1fr}}
+@media(max-width:650px){.sidebar{width:58px}.main{margin-left:58px;width:calc(100% - 58px);padding:13px}.cards,.formgrid,.insight-grid{grid-template-columns:1fr}.hero-copy{padding-right:95px}.hero img{width:78px;height:78px;right:14px;top:14px}}
+@media print{
+ body{background:#fff}.sidebar,.topbar,.no-print,.toast{display:none!important}
+ .main{margin:0;width:100%;padding:0}.page{display:none!important}.page.print-page{display:block!important}
+ .invoice-preview{border:0;padding:0}
+}
+</style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+ <div class="brand">
+  <img id="logoSide" alt="Brothers OG">
+  <div class="txt"><strong>Brothers OG</strong><small>Inventory & Billing</small></div>
+ </div>
+ <nav class="nav">
+  <button class="active" onclick="go('dashboard',this)">📊 <span class="txt">Dashboard</span></button>
+  <button onclick="go('inventory',this)">📦 <span class="txt">Inventory</span></button>
+  <button onclick="go('billing',this)">🧾 <span class="txt">Billing / POS</span></button>
+  <button onclick="go('invoices',this)">📋 <span class="txt">Invoices</span></button>
+  <button onclick="go('settings',this)">⚙️ <span class="txt">Settings</span></button>
+ </nav>
+</aside>
+
+<main class="main">
+<header class="topbar">
+ <div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Inventory, sales and profit at a glance.</p></div>
+ <button class="btn primary no-print" onclick="openProductModal()">＋ Add Product</button>
+</header>
+
+<section id="dashboard" class="page active">
+ <div class="cards">
+  <div class="card stat"><div><div class="num" id="mProducts">0</div><small>Total Products</small></div><div class="icon">📦</div></div>
+  <div class="card stat"><div><div class="num" id="mUnits">0</div><small>Units in Stock</small></div><div class="icon">👕</div></div>
+  <div class="card stat"><div><div class="num" id="mCost">₹0</div><small>Inventory Cost</small></div><div class="icon">💰</div></div>
+  <div class="card stat"><div><div class="num" id="mPotential">₹0</div><small>Potential Revenue</small></div><div class="icon">📈</div></div>
+ </div>
+
+ <div class="card hero">
+  <img id="logoHero" alt="Brothers OG">
+  <div class="hero-copy">
+   <div class="kicker">BROTHERS OG / STREETWEAR</div>
+   <h2>Your store, inventory and billing in one place.</h2>
+   <p>Use the exact Brothers OG product catalogue, keep stock updated, make bills, and automatically deduct sold quantities from inventory.</p>
+  </div>
+ </div>
+
+ <div class="grid2">
+  <div class="card">
+   <div class="section-title"><h2>Business Snapshot</h2><span class="badge good">Live</span></div>
+   <div class="insight-grid">
+    <div class="insight"><span>Gross Profit from Sales</span><b id="mSalesProfit">₹0</b></div>
+    <div class="insight"><span>Total Revenue</span><b id="mRevenue">₹0</b></div>
+    <div class="insight"><span>Potential Gross Profit in Stock</span><b id="mPotentialProfit">₹0</b></div>
+    <div class="insight"><span>Low Stock Items</span><b id="mLow">0</b></div>
+   </div>
+   <div style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>Inventory cost vs potential selling value</span><span id="ratioText">0%</span></div>
+    <div class="progress"><span id="ratioBar" style="width:0%"></span></div>
+   </div>
+  </div>
+  <div class="card">
+   <div class="section-title"><h2>Top Profit / Unit</h2></div>
+   <div id="topProfit"></div>
+  </div>
+ </div>
+
+ <div class="grid2">
+  <div class="card">
+   <div class="section-title"><h2>Recent Sales</h2><button class="btn secondary" onclick="go('invoices',document.querySelectorAll('.nav button')[3])">View all</button></div>
+   <div id="recentSales"></div>
+  </div>
+  <div class="card">
+   <div class="section-title"><h2>Low Stock Alerts</h2><button class="btn secondary" onclick="go('inventory',document.querySelectorAll('.nav button')[1])">Inventory</button></div>
+   <div id="lowStock"></div>
+  </div>
+ </div>
+
+ <div class="card" style="margin-top:16px">
+  <div class="section-title"><h2>Current Stock Overview</h2></div>
+  <div class="table-wrap"><table><thead><tr><th>Product</th><th>Purchase</th><th>Sell</th><th>Profit / Unit</th><th>Stock</th><th>Potential Revenue</th><th>Potential Profit</th><th>Status</th></tr></thead><tbody id="dashTable"></tbody></table></div>
+ </div>
+</section>
+
+<section id="inventory" class="page">
+ <div class="card">
+  <div class="toolbar">
+   <input id="inventorySearch" placeholder="Search product or SKU..." oninput="renderInventory()">
+   <button class="btn secondary" onclick="resetDemo()">Reset Demo Inventory</button>
+   <button class="btn secondary" onclick="exportData()">Export Backup</button>
+   <button class="btn success" onclick="exportInventoryExcel()">📊 Inventory Excel</button>
+   <label class="btn secondary">Import Backup<input type="file" accept=".json" hidden onchange="importData(event)"></label>
+  </div>
+  <div class="mini-note" style="margin-bottom:12px">These are the exact products and purchase/selling prices you specified. Demo stock starts at 20 per product.</div>
+  <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Purchase</th><th>Sell</th><th>Profit / Unit</th><th>Stock</th><th>Stock Cost</th><th>Potential Revenue</th><th>Action</th></tr></thead><tbody id="inventoryBody"></tbody></table></div>
+ </div>
+</section>
+
+<section id="billing" class="page">
+ <div class="billgrid">
+  <div class="card">
+   <div class="section-title"><h2>Create Invoice</h2><button class="btn secondary" onclick="clearBill()">Clear</button></div>
+   <div class="formgrid">
+    <div class="field"><label>Customer Name</label><input id="customerName" placeholder="Walk-in Customer"></div>
+    <div class="field"><label>Phone</label><input id="customerPhone" placeholder="Optional"></div>
+    <div class="field"><label>Payment</label><select id="payment"><option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option><option>Credit</option></select></div>
+    <div class="field full"><label>Add Product</label><input id="billSearch" placeholder="Search product or SKU..." oninput="searchBill()"></div>
+   </div>
+   <div id="productPicker" style="margin-top:8px"></div>
+   <div id="billLines" style="margin-top:12px"></div>
+   <div class="mini-note" style="margin-top:10px">When the invoice is saved, the sold quantity is automatically deducted from inventory.</div>
+  </div>
+
+  <div class="card">
+   <div class="section-title"><h2>Invoice Summary</h2><span id="invoiceNumber" class="badge good"></span></div>
+   <div class="field"><label>Discount (₹)</label><input id="discount" type="number" min="0" value="0" oninput="renderBill()"></div>
+   <div class="field" style="margin-top:10px"><label>GST / Tax (%)</label><input id="taxRate" type="number" min="0" value="0" oninput="renderBill()"></div>
+   <div class="totals">
+    <div class="totrow"><span>Subtotal</span><b id="billSubtotal">₹0</b></div>
+    <div class="totrow"><span>Discount</span><b id="billDiscount">₹0</b></div>
+    <div class="totrow"><span>Tax</span><b id="billTax">₹0</b></div>
+    <div class="totrow grand"><span>Total</span><b id="billTotal">₹0</b></div>
+   </div>
+   <button class="btn primary" style="width:100%;margin-top:14px" onclick="saveInvoice()">Save Invoice & Deduct Stock</button>
+   <button class="btn secondary" style="width:100%;margin-top:8px" onclick="previewBill()">Preview / Print</button>
+  </div>
+ </div>
+</section>
+
+<section id="invoices" class="page">
+ <div class="card">
+  <div class="toolbar"><input id="invoiceSearch" placeholder="Search invoice, customer or phone..." oninput="renderInvoices()">
+  <button class="btn success" onclick="exportInvoicesExcel()">📊 Invoices Excel</button>
+  <button class="btn primary" onclick="exportAllExcel()">📥 Export Everything</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="invoiceBody"></tbody></table></div>
+ </div>
+</section>
+
+<section id="settings" class="page">
+ <div class="card">
+  <div class="section-title">
+   <h2>Store Settings</h2>
+   <div><button class="btn secondary" onclick="resetDemo()">Reset Demo</button> <button class="btn primary" onclick="saveSettings()">Save</button></div>
+  </div>
+  <div class="formgrid">
+   <div class="field"><label>Business Name</label><input id="storeName"></div>
+   <div class="field"><label>Phone</label><input id="storePhone"></div>
+   <div class="field"><label>Email</label><input id="storeEmail"></div>
+   <div class="field full"><label>Address</label><input id="storeAddress"></div>
+   <div class="field"><label>GSTIN (optional)</label><input id="storeGSTIN"></div>
+   <div class="field"><label>Invoice Prefix</label><input id="storePrefix"></div>
+   <div class="field"><label>Low Stock Alert At</label><input id="storeLow" type="number" min="0"></div>
+  </div>
+  <div class="mini-note" style="margin-top:12px">Data is stored locally in this browser. Export a backup regularly.</div>
+ </div>
+</section>
+
+<section id="printPage" class="page print-page">
+ <div class="invoice-preview" id="printInvoice"></div>
+</section>
+</main>
+</div>
+
+<div class="modal" id="productModal">
+ <div class="modalbox">
+  <div class="modalhead"><h3 id="productModalTitle">Add Product</h3><button class="x" onclick="closeProductModal()">×</button></div>
+  <form onsubmit="saveProduct(event)">
+   <input type="hidden" id="productId">
+   <div class="formgrid">
+    <div class="field"><label>SKU *</label><input id="pSku" required></div>
+    <div class="field"><label>Product Name *</label><input id="pName" required></div>
+    <div class="field"><label>Purchase Price (₹) *</label><input id="pPurchase" type="number" min="0" step=".01" required></div>
+    <div class="field"><label>Selling Price (₹) *</label><input id="pSell" type="number" min="0" step=".01" required></div>
+    <div class="field"><label>Stock Quantity *</label><input id="pStock" type="number" min="0" step="1" required></div>
+   </div>
+   <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button type="button" class="btn secondary" onclick="closeProductModal()">Cancel</button><button class="btn primary">Save Product</button></div>
+  </form>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LOGO="data:image/jpeg;base64,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";
+const DEMO={"products":[{"id":"p1","sku":"BOG-NT-001","name":"Normal T-Shirts","purchase":300,"sell":500,"stock":20},{"id":"p2","sku":"BOG-OT-001","name":"Oversize T-Shirts","purchase":400,"sell":600,"stock":20},{"id":"p3","sku":"BOG-JP-001","name":"Jeans Pants","purchase":600,"sell":800,"stock":20},{"id":"p4","sku":"BOG-BJ-001","name":"Baggy Jeans","purchase":700,"sell":1000,"stock":20},{"id":"p5","sku":"BOG-KP-001","name":"Korean Pants","purchase":800,"sell":1500,"stock":20},{"id":"p6","sku":"BOG-FS-001","name":"Full Sleeve T-Shirts","purchase":400,"sell":700,"stock":20},{"id":"p7","sku":"BOG-TR-001","name":"Trousers","purchase":600,"sell":1000,"stock":20},{"id":"p8","sku":"BOG-WT-001","name":"Watches","purchase":1200,"sell":2000,"stock":20},{"id":"p9","sku":"BOG-CP-001","name":"Caps","purchase":200,"sell":400,"stock":20},{"id":"p10","sku":"BOG-WL-001","name":"Wallets","purchase":200,"sell":500,"stock":20}],"invoices":[{"id":"inv1","no":"BOG-00001","date":"2026-08-18T11:20:00","customer":"Aarav Sen","phone":"98XXXXXX21","payment":"UPI","items":[{"id":"p1","sku":"BOG-NT-001","name":"Normal T-Shirts","qty":2,"price":500},{"id":"p9","sku":"BOG-CP-001","name":"Caps","qty":1,"price":400}],"subtotal":1400,"discount":0,"taxRate":0,"tax":0,"total":1400,"status":"Paid"},{"id":"inv2","no":"BOG-00002","date":"2026-08-19T15:45:00","customer":"Riya Das","phone":"97XXXXXX43","payment":"Card","items":[{"id":"p5","sku":"BOG-KP-001","name":"Korean Pants","qty":1,"price":1500},{"id":"p2","sku":"BOG-OT-001","name":"Oversize T-Shirts","qty":1,"price":600}],"subtotal":2100,"discount":100,"taxRate":0,"tax":0,"total":2000,"status":"Paid"},{"id":"inv3","no":"BOG-00003","date":"2026-08-20T09:15:00","customer":"Kabir Roy","phone":"90XXXXXX76","payment":"Cash","items":[{"id":"p8","sku":"BOG-WT-001","name":"Watches","qty":1,"price":2000},{"id":"p10","sku":"BOG-WL-001","name":"Wallets","qty":1,"price":500}],"subtotal":2500,"discount":0,"taxRate":0,"tax":0,"total":2500,"status":"Paid"}],"settings":{"name":"Brothers OG","phone":"+91 90000 00000","email":"hello@brothersog.in","address":"Kolkata, West Bengal, India","gstin":"","prefix":"BOG","low":5}};
+const KEY="brothersOG_full_v1";
+let db=JSON.parse(localStorage.getItem(KEY)||"null") || structuredClone(DEMO);
+let currentBill=[];
+let currentPrintInvoice=null;
+
+document.getElementById("logoSide").src=LOGO;
+document.getElementById("logoHero").src=LOGO;
+
+function money(n){return "₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300)}
+function lowBadge(stock){return stock===0?'<span class="badge out">Out of stock</span>':stock<=db.settings.low?'<span class="badge low">Low stock</span>':'<span class="badge good">In stock</span>'}
+function go(page,btn){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(page).classList.add("active");
+ document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ const map={
+  dashboard:["Dashboard","Inventory, sales and profit at a glance."],
+  inventory:["Inventory","Stock, purchase price, selling price and profit."],
+  billing:["Billing / POS","Create customer invoices and deduct stock automatically."],
+  invoices:["Invoices","Sales history, printing and invoice cancellation."],
+  settings:["Settings","Store details, alerts and backups."]
+ };
+ document.getElementById("pageTitle").textContent=map[page][0];
+ document.getElementById("pageSubtitle").textContent=map[page][1];
+ renderAll();
+}
+function productCostValue(){return db.products.reduce((a,p)=>a+p.purchase*p.stock,0)}
+function potentialRevenue(){return db.products.reduce((a,p)=>a+p.sell*p.stock,0)}
+function potentialProfit(){return potentialRevenue()-productCostValue()}
+function salesRevenue(){return db.invoices.filter(i=>i.status!=="Cancelled").reduce((a,i)=>a+i.total,0)}
+function salesProfit(){
+ return db.invoices.filter(i=>i.status!=="Cancelled").reduce((total,inv)=>{
+   const itemProfit=inv.items.reduce((s,it)=>{
+     const p=db.products.find(x=>x.id===it.id)||db.products.find(x=>x.sku===it.sku);
+     return s+(p?(it.price-p.purchase)*it.qty:0);
+   },0);
+   return total+itemProfit-inv.discount;
+ },0)
+}
+function renderDashboard(){
+ const units=db.products.reduce((a,p)=>a+p.stock,0);
+ const cost=productCostValue(), potential=potentialRevenue(), revenue=salesRevenue(), profit=salesProfit();
+ document.getElementById("mProducts").textContent=db.products.length;
+ document.getElementById("mUnits").textContent=units.toLocaleString("en-IN");
+ document.getElementById("mCost").textContent=money(cost);
+ document.getElementById("mPotential").textContent=money(potential);
+ document.getElementById("mSalesProfit").textContent=money(profit);
+ document.getElementById("mRevenue").textContent=money(revenue);
+ document.getElementById("mPotentialProfit").textContent=money(potentialProfit());
+ document.getElementById("mLow").textContent=db.products.filter(p=>p.stock<=db.settings.low).length;
+ const ratio=potential?Math.min(100,cost/potential*100):0;
+ document.getElementById("ratioText").textContent=ratio.toFixed(1)+"%";
+ document.getElementById("ratioBar").style.width=ratio+"%";
+ const top=[...db.products].sort((a,b)=>(b.sell-b.purchase)-(a.sell-a.purchase)).slice(0,5);
+ document.getElementById("topProfit").innerHTML=top.map((p,i)=>`
+  <div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px">
+   <div><b>${i+1}. ${esc(p.name)}</b><div class="mini-note">${esc(p.sku)}</div></div>
+   <b style="color:var(--green)">${money(p.sell-p.purchase)} / unit</b>
+  </div>`).join("");
+ const recent=db.invoices.slice().reverse().slice(0,5);
+ document.getElementById("recentSales").innerHTML=recent.length?`<table><tbody>${
+  recent.map(i=>`<tr><td><b>${esc(i.no)}</b><small class="mini-note" style="display:block">${esc(i.customer)}</small></td><td class="right"><b>${money(i.total)}</b></td></tr>`).join("")
+ }</tbody></table>`:'<div class="empty">No invoices yet.</div>';
+ const low=db.products.filter(p=>p.stock<=db.settings.low).sort((a,b)=>a.stock-b.stock).slice(0,7);
+ document.getElementById("lowStock").innerHTML=low.length?low.map(p=>`
+  <div style="padding:9px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px">
+   <div><b>${esc(p.name)}</b><div class="mini-note">${esc(p.sku)}</div></div>${lowBadge(p.stock)}
+  </div>`).join(""):'<div class="empty">No low-stock products.</div>';
+ document.getElementById("dashTable").innerHTML=db.products.map(p=>`
+  <tr><td><b>${esc(p.name)}</b><div class="mini-note">${esc(p.sku)}</div></td>
+  <td>${money(p.purchase)}</td><td>${money(p.sell)}</td><td><b style="color:var(--green)">${money(p.sell-p.purchase)}</b></td>
+  <td>${p.stock}</td><td>${money(p.sell*p.stock)}</td><td>${money((p.sell-p.purchase)*p.stock)}</td><td>${lowBadge(p.stock)}</td></tr>
+ `).join("");
+}
+function renderInventory(){
+ const q=(document.getElementById("inventorySearch")?.value||"").toLowerCase();
+ const rows=db.products.filter(p=>(p.sku+" "+p.name).toLowerCase().includes(q));
+ document.getElementById("inventoryBody").innerHTML=rows.length?rows.map(p=>`
+  <tr><td><b>${esc(p.sku)}</b></td><td><b>${esc(p.name)}</b></td><td>${money(p.purchase)}</td><td>${money(p.sell)}</td>
+   <td><b style="color:var(--green)">${money(p.sell-p.purchase)}</b></td><td><b>${p.stock}</b></td><td>${money(p.purchase*p.stock)}</td><td>${money(p.sell*p.stock)}</td>
+   <td><button class="btn secondary" onclick="editProduct('${p.id}')">Edit</button> <button class="btn danger" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>
+ `).join(""):'<tr><td colspan="9" class="empty">No products found.</td></tr>';
+}
+function nextInvoiceNo(){return `${db.settings.prefix||"BOG"}-${String(db.invoices.length+1).padStart(5,"0")}`}
+function searchBill(){
+ const q=(document.getElementById("billSearch").value||"").toLowerCase();
+ if(!q){document.getElementById("productPicker").innerHTML="";return}
+ const matches=db.products.filter(p=>p.stock>0&&(p.sku+" "+p.name).toLowerCase().includes(q)).slice(0,8);
+ document.getElementById("productPicker").innerHTML=matches.map(p=>`
+  <button class="btn secondary" style="margin:3px" onclick="addBill('${p.id}')">${esc(p.name)} · ${esc(p.sku)} · ${money(p.sell)} · ${p.stock} left</button>
+ `).join("")||'<span class="mini-note">No in-stock match.</span>';
+}
+function addBill(id){
+ const p=db.products.find(x=>x.id===id);if(!p)return;
+ const line=currentBill.find(x=>x.id===id);
+ if(line){if(line.qty>=p.stock){toast("Not enough stock");return}line.qty++}
+ else currentBill.push({id,qty:1});
+ document.getElementById("billSearch").value="";
+ document.getElementById("productPicker").innerHTML="";
+ renderBill();
+}
+function removeBill(id){currentBill=currentBill.filter(x=>x.id!==id);renderBill()}
+function setBillQty(id,q){
+ const p=db.products.find(x=>x.id===id), line=currentBill.find(x=>x.id===id);
+ line.qty=Math.max(1,Math.min(Number(q)||1,p.stock));renderBill();
+}
+function billNumbers(){
+ const subtotal=currentBill.reduce((a,x)=>a+((db.products.find(p=>p.id===x.id)?.sell||0)*x.qty),0);
+ const discount=Math.min(Number(document.getElementById("discount").value)||0,subtotal);
+ const taxRate=Number(document.getElementById("taxRate").value)||0;
+ const tax=(subtotal-discount)*taxRate/100;
+ return {subtotal,discount,taxRate,tax,total:subtotal-discount+tax};
+}
+function renderBill(){
+ const box=document.getElementById("billLines");
+ box.innerHTML=currentBill.length?currentBill.map(x=>{
+  const p=db.products.find(z=>z.id===x.id);
+  return `<div class="billrow"><div><b>${esc(p.name)}</b><small>${esc(p.sku)}</small></div><input type="number" min="1" max="${p.stock}" value="${x.qty}" onchange="setBillQty('${x.id}',this.value)"><b class="right">${money(p.sell*x.qty)}</b><button class="x" onclick="removeBill('${x.id}')">×</button></div>`;
+ }).join(""):'<div class="empty">No products added.</div>';
+ const n=billNumbers();
+ document.getElementById("invoiceNumber").textContent=nextInvoiceNo();
+ document.getElementById("billSubtotal").textContent=money(n.subtotal);
+ document.getElementById("billDiscount").textContent=money(n.discount);
+ document.getElementById("billTax").textContent=money(n.tax);
+ document.getElementById("billTotal").textContent=money(n.total);
+}
+function clearBill(){
+ currentBill=[];
+ document.getElementById("customerName").value="";
+ document.getElementById("customerPhone").value="";
+ document.getElementById("discount").value=0;
+ document.getElementById("taxRate").value=0;
+ renderBill();
+}
+function saveInvoice(){
+ if(!currentBill.length){toast("Add at least one product.");return}
+ for(const x of currentBill){
+  const p=db.products.find(z=>z.id===x.id);
+  if(!p||x.qty>p.stock){toast("Stock is not enough.");return}
+ }
+ const n=billNumbers();
+ const inv={
+  id:crypto.randomUUID(),no:nextInvoiceNo(),date:new Date().toISOString(),
+  customer:document.getElementById("customerName").value.trim()||"Walk-in Customer",
+  phone:document.getElementById("customerPhone").value.trim(),
+  payment:document.getElementById("payment").value,
+  items:currentBill.map(x=>{const p=db.products.find(z=>z.id===x.id);return {id:p.id,sku:p.sku,name:p.name,qty:x.qty,price:p.sell}}),
+  subtotal:n.subtotal,discount:n.discount,taxRate:n.taxRate,tax:n.tax,total:n.total,status:"Paid"
+ };
+ currentBill.forEach(x=>{db.products.find(p=>p.id===x.id).stock-=x.qty});
+ db.invoices.push(inv);persist();currentBill=[];renderAll();toast(`${inv.no} saved — stock deducted`);printInvoice(inv,true);
+}
+function renderInvoices(){
+ const q=(document.getElementById("invoiceSearch")?.value||"").toLowerCase();
+ const rows=db.invoices.slice().reverse().filter(i=>(i.no+" "+i.customer+" "+i.phone).toLowerCase().includes(q));
+ document.getElementById("invoiceBody").innerHTML=rows.length?rows.map(i=>`
+  <tr><td><b>${esc(i.no)}</b></td><td>${new Date(i.date).toLocaleString("en-IN")}</td><td>${esc(i.customer)}<small class="mini-note" style="display:block">${esc(i.phone)}</small></td>
+  <td>${esc(i.payment)}</td><td><b>${money(i.total)}</b></td><td><span class="badge ${i.status==="Cancelled"?"out":"good"}">${i.status}</span></td>
+  <td><button class="btn secondary" onclick="printById('${i.id}')">Print</button> ${i.status!=="Cancelled"?`<button class="btn danger" onclick="cancelInvoice('${i.id}')">Cancel</button>`:""}</td></tr>
+ `).join(""):'<tr><td colspan="7" class="empty">No invoices found.</td></tr>';
+}
+function cancelInvoice(id){
+ const inv=db.invoices.find(i=>i.id===id);if(!inv||inv.status==="Cancelled")return;
+ if(!confirm(`Cancel ${inv.no}? Sold stock will be restored.`))return;
+ inv.status="Cancelled";
+ inv.items.forEach(it=>{const p=db.products.find(x=>x.id===it.id)||db.products.find(x=>x.sku===it.sku);if(p)p.stock+=it.qty});
+ persist();renderAll();toast("Invoice cancelled and stock restored");
+}
+function printById(id){const inv=db.invoices.find(x=>x.id===id);if(inv)printInvoice(inv,true)}
+function previewBill(){
+ if(!currentBill.length){toast("Add products first.");return}
+ const n=billNumbers();
+ const inv={
+  id:"draft",no:nextInvoiceNo(),date:new Date().toISOString(),customer:document.getElementById("customerName").value.trim()||"Walk-in Customer",
+  phone:document.getElementById("customerPhone").value.trim(),payment:document.getElementById("payment").value,
+  items:currentBill.map(x=>{const p=db.products.find(z=>z.id===x.id);return {id:p.id,sku:p.sku,name:p.name,qty:x.qty,price:p.sell}}),
+  subtotal:n.subtotal,discount:n.discount,taxRate:n.taxRate,tax:n.tax,total:n.total,status:"Draft"
+ };
+ printInvoice(inv,true);
+}
+function printInvoice(inv,doPrint){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById("printPage").classList.add("active");
+ const s=db.settings;
+ document.getElementById("printInvoice").innerHTML=`
+  <div class="invoice-head">
+   <div class="invoice-brand"><img src="${LOGO}" alt=""><div><h2 style="margin:0">${esc(s.name)}</h2><div class="mini-note">${esc(s.address)}</div><div class="mini-note">${esc(s.phone)} ${s.email?" · "+esc(s.email):""}</div>${s.gstin?`<div class="mini-note">GSTIN: ${esc(s.gstin)}</div>`:""}</div></div>
+   <div class="right"><h2 style="margin:0;color:var(--maroon)">INVOICE</h2><b>${esc(inv.no)}</b><div class="mini-note">${new Date(inv.date).toLocaleString("en-IN")}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin:18px 0"><div><b>Bill To</b><br>${esc(inv.customer)}<br>${esc(inv.phone)}</div><div><b>Payment</b><br>${esc(inv.payment)}</div></div>
+  <table class="invtable"><thead><tr><th>#</th><th>Item</th><th>SKU</th><th>Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr></thead>
+   <tbody>${inv.items.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${esc(x.sku)}</td><td>${x.qty}</td><td class="right">${money(x.price)}</td><td class="right">${money(x.price*x.qty)}</td></tr>`).join("")}</tbody>
+  </table>
+  <div style="display:flex;justify-content:flex-end;margin-top:18px"><div style="width:280px">
+   <div class="totrow"><span>Subtotal</span><b>${money(inv.subtotal)}</b></div>
+   <div class="totrow"><span>Discount</span><b>- ${money(inv.discount)}</b></div>
+   <div class="totrow"><span>Tax ${inv.taxRate?`(${inv.taxRate}%)`:""}</span><b>${money(inv.tax)}</b></div>
+   <div class="totrow grand"><span>Total</span><b>${money(inv.total)}</b></div>
+  </div></div>
+  <div style="text-align:center;margin-top:42px;border-top:1px solid #ddd;padding-top:14px"><b>Thank you for shopping with Brothers OG.</b><div class="mini-note">Streetwear made for your everyday OG energy.</div></div>
+  <div class="no-print" style="text-align:center;margin-top:18px"><button class="btn primary" onclick="window.print()">Print Invoice</button> <button class="btn secondary" onclick="go('invoices',document.querySelectorAll('.nav button')[3])">Back</button></div>
+ `;
+ if(doPrint)setTimeout(()=>window.print(),150);
+}
+function openProductModal(id=""){
+ document.getElementById("productModal").classList.add("show");
+ document.getElementById("productModalTitle").textContent=id?"Edit Product":"Add Product";
+ document.getElementById("productId").value=id;
+ const p=db.products.find(x=>x.id===id)||{sku:"",name:"",purchase:0,sell:0,stock:0};
+ document.getElementById("pSku").value=p.sku;document.getElementById("pName").value=p.name;document.getElementById("pPurchase").value=p.purchase;document.getElementById("pSell").value=p.sell;document.getElementById("pStock").value=p.stock;
+}
+function closeProductModal(){document.getElementById("productModal").classList.remove("show")}
+function editProduct(id){openProductModal(id)}
+function saveProduct(e){
+ e.preventDefault();
+ const id=document.getElementById("productId").value,sku=document.getElementById("pSku").value.trim();
+ if(db.products.some(p=>p.sku.toLowerCase()===sku.toLowerCase()&&p.id!==id)){toast("SKU already exists.");return}
+ const data={id:id||crypto.randomUUID(),sku,name:document.getElementById("pName").value.trim(),purchase:Number(document.getElementById("pPurchase").value)||0,sell:Number(document.getElementById("pSell").value)||0,stock:Number(document.getElementById("pStock").value)||0};
+ if(id)db.products[db.products.findIndex(p=>p.id===id)]=data;else db.products.push(data);
+ persist();closeProductModal();renderAll();toast(id?"Product updated":"Product added");
+}
+function deleteProduct(id){const p=db.products.find(x=>x.id===id);if(confirm(`Delete ${p.name}?`)){db.products=db.products.filter(x=>x.id!==id);persist();renderAll();toast("Product deleted")}}
+function resetDemo(){if(confirm("Replace current data with the Brothers OG demo inventory and sample invoices?")){db=structuredClone(DEMO);persist();currentBill=[];loadSettings();renderAll();toast("Demo data restored")}}
+function exportData(){
+ const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);a.download=`brothers-og-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
+}
+function importData(e){
+ const file=e.target.files[0];if(!file)return;const r=new FileReader();
+ r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.products||!x.invoices||!x.settings)throw 0;db=x;persist();renderAll();loadSettings();toast("Backup imported")}catch{toast("Invalid backup file")}};r.readAsText(file)
+}
+function loadSettings(){
+ const s=db.settings;document.getElementById("storeName").value=s.name;document.getElementById("storePhone").value=s.phone;document.getElementById("storeEmail").value=s.email;
+ document.getElementById("storeAddress").value=s.address;document.getElementById("storeGSTIN").value=s.gstin||"";document.getElementById("storePrefix").value=s.prefix;document.getElementById("storeLow").value=s.low;
+}
+function saveSettings(){
+ db.settings={name:document.getElementById("storeName").value.trim()||"Brothers OG",phone:document.getElementById("storePhone").value.trim(),email:document.getElementById("storeEmail").value.trim(),address:document.getElementById("storeAddress").value.trim(),gstin:document.getElementById("storeGSTIN").value.trim(),prefix:document.getElementById("storePrefix").value.trim()||"BOG",low:Number(document.getElementById("storeLow").value)||5};
+ persist();renderAll();loadSettings();toast("Settings saved");
+}
+
+function ensureXLSX(){
+  if(typeof XLSX==='undefined'){toast('Excel export library is not available. Please open the file while connected to the internet.');return false}
+  return true;
+}
+function exportInventoryExcel(){
+  if(!ensureXLSX()) return;
+  const rows=db.products.map(p=>({
+    SKU:p.sku,
+    Product:p.name,
+    'Purchase Price':p.purchase,
+    'Selling Price':p.sell,
+    'Profit / Unit':p.sell-p.purchase,
+    'Stock Qty':p.stock,
+    'Inventory Cost':p.purchase*p.stock,
+    'Potential Revenue':p.sell*p.stock,
+    'Potential Profit':(p.sell-p.purchase)*p.stock,
+    Status:p.stock===0?'Out of stock':p.stock<=db.settings.low?'Low stock':'In stock'
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:15},{wch:30},{wch:16},{wch:16},{wch:16},{wch:12},{wch:18},{wch:20},{wch:19},{wch:16}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Inventory');
+  XLSX.writeFile(wb,`Brothers_OG_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Inventory Excel exported');
+}
+function exportInvoicesExcel(){
+  if(!ensureXLSX()) return;
+  const rows=[];
+  db.invoices.forEach(i=>{
+    i.items.forEach((it,idx)=>rows.push({
+      Invoice:i.no,
+      Date:new Date(i.date),
+      Customer:i.customer,
+      Phone:i.phone,
+      Payment:i.payment,
+      ItemNo:idx+1,
+      SKU:it.sku,
+      Product:it.name,
+      Quantity:it.qty,
+      'Selling Price':it.price,
+      'Item Amount':it.price*it.qty,
+      Discount:idx===0?i.discount:0,
+      Tax:idx===0?i.tax:0,
+      'Invoice Total':idx===0?i.total:'',
+      Status:i.status
+    }));
+    if(!i.items.length) rows.push({Invoice:i.no,Date:new Date(i.date),Customer:i.customer,Phone:i.phone,Payment:i.payment,Status:i.status,'Invoice Total':i.total});
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:14},{wch:20},{wch:22},{wch:15},{wch:16},{wch:8},{wch:15},{wch:30},{wch:10},{wch:16},{wch:16},{wch:12},{wch:12},{wch:16},{wch:14}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invoices');
+  XLSX.writeFile(wb,`Brothers_OG_Invoices_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Invoices Excel exported');
+}
+function exportAllExcel(){
+  if(!ensureXLSX()) return;
+  const invRows=db.products.map(p=>({SKU:p.sku,Product:p.name,Purchase:p.purchase,Sell:p.sell,'Profit / Unit':p.sell-p.purchase,Stock:p.stock,'Inventory Cost':p.purchase*p.stock,'Potential Revenue':p.sell*p.stock,'Potential Profit':(p.sell-p.purchase)*p.stock}));
+  const invoiceRows=[];
+  db.invoices.forEach(i=>i.items.forEach((it,idx)=>invoiceRows.push({Invoice:i.no,Date:new Date(i.date),Customer:i.customer,Phone:i.phone,Payment:i.payment,SKU:it.sku,Product:it.name,Quantity:it.qty,Rate:it.price,'Item Amount':it.price*it.qty,Discount:idx===0?i.discount:0,Tax:idx===0?i.tax:0,'Invoice Total':idx===0?i.total:'',Status:i.status})));
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.json_to_sheet(invRows); ws1['!cols']=[{wch:15},{wch:30},{wch:13},{wch:13},{wch:15},{wch:10},{wch:18},{wch:18},{wch:18}];
+  const ws2=XLSX.utils.json_to_sheet(invoiceRows); ws2['!cols']=[{wch:14},{wch:20},{wch:22},{wch:15},{wch:15},{wch:15},{wch:30},{wch:10},{wch:13},{wch:15},{wch:12},{wch:12},{wch:15},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Inventory');XLSX.utils.book_append_sheet(wb,ws2,'Invoices');
+  XLSX.writeFile(wb,`Brothers_OG_Complete_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Inventory + invoices exported');
+}
+
+function renderAll(){renderDashboard();renderInventory();renderBill();renderInvoices();loadSettings()}
+renderAll();
+</script>
+</body>
+</html>
